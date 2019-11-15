@@ -5,6 +5,7 @@ import App from './App'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 import router from './router'
+import store from './store'
 import VueGoogleCharts from 'vue-google-charts'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet/dist/leaflet.js'
@@ -17,6 +18,7 @@ Vue.config.productionTip = false
 /* eslint-disable no-new */
 new Vue({
   router,
+  store,
   vuetify: new Vuetify(),
   render: h => h(App)
 }).$mount('#app')
