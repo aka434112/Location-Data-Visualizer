@@ -2,6 +2,7 @@
   <v-container>
     <v-layout row wrap>
         <v-flex xs12 sm8>
+          <input-csv-file></input-csv-file>
           <v-card class="map" id="map">
           </v-card>
         </v-flex>
@@ -11,6 +12,7 @@
 
 <script>
 import mapConstants from '../constants/mapconstants'
+import inputCsvFile from './DataSource'
 import {mapGetters} from 'vuex'
 
 export default {
@@ -20,6 +22,9 @@ export default {
       map: null,
       tileLayer: null
     }
+  },
+  components: {
+    inputCsvFile
   },
   methods: {
     initMap() {
@@ -35,17 +40,22 @@ export default {
       this.tileLayer.addTo(this.map);
     },
     initLayers () {
-      const markerFeatures = this.markerFeatures
-      markerFeatures.forEach((feature) => {
-          feature.leafletObject = L.marker(feature.coords)
-            .bindPopup(feature.name);
-      });
+      const originMarkerFeatures = this.originMarkerFeatures
+      originMarkerFeatures.forEach((feature) => {
+          feature.leafletObject = L.marker(feature.coords).bindPopup(feature.name)
+          feature.leafletObject.addTo(this.map)
+      })
     }
   },
   computed: {
     ...mapGetters([
-      'markerFeatures'
+      'originMarkerFeatures'
     ])
+  },
+  watch: {
+    originMarkerFeatures: function () {
+      this.initLayers()
+    }
   },
   mounted() {
     this.initMap()

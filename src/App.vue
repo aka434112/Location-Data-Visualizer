@@ -1,6 +1,18 @@
 <template>
   <v-app id="app">
     <div>
+        <v-dialog v-model="loading" persistent width="300">
+            <v-card color="primary" dark>
+              <v-card-text>
+                Please stand by
+              <v-progress-linear
+              indeterminate
+              color="white"
+              class="mb-0"
+              ></v-progress-linear>
+              </v-card-text>
+            </v-card>
+        </v-dialog>
       <v-app-bar color="blue" dark>
           <v-app-bar-nav-icon @click="showNavMenu=true"></v-app-bar-nav-icon>
           <v-toolbar-title>Ride Analysis Dashboard</v-toolbar-title>
@@ -37,24 +49,30 @@
 </template>
 
 <script>
+import {mapGetters} from 'vuex'
+
 export default {
   name: 'App',
   data () {
     return {
       showNavMenu: false,
       items: [
-        { title: 'Home', icon: 'dashboard', to: '/' },
-        { title: 'Settings', icon: 'settings_applications', to: '/settings' }
+        { title: 'Home', icon: 'dashboard', to: '/' }
       ],
       mini: false
     }
-  }
+  },
+  computed: {
+    ...mapGetters([
+      'loading'
+    ])
+  },
 }
 </script>
 
 <style lang="stylus">
 #app 
-  font-family 'Montserrat', sans-serif
+  font-family 'Montserrat', sans-serif !important
   -webkit-font-smoothing antialiased
   -moz-osx-font-smoothing grayscale
 </style>

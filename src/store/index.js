@@ -9,19 +9,40 @@ export default new Vuex.Store({
     // strict mode in the dev environment.
     strict: process.env.NODE_ENV !== 'production',
     state: {
-        markerFeatures: []
+        loading: false,
+        markerFeaturesBasedOnVehicleType: {},
+        destinationMarkerFeatures: [],
+        originMarkerFeatures: []
     },
     mutations: {
-        updateMarkers (state, markerFeatures) {
-            state.markerFeatures = markerFeatures
-        }
+      updateOriginMarkerFeatures (state, markerFeatures) {
+        state.originMarkerFeatures = markerFeatures
+      },
+      updateDestMarkerFeatures (state, markerFeatures) {
+        state.destinationMarkerFeatures = markerFeatures
+      },
+      updateApplicationLoadingState (state) {
+        state.loading = !state.loading
+      },
+      updateMarkerFeaturesBasedOnVehicle (state, markerFeatures) {
+        state.markerFeaturesBasedOnVehicleType = markerFeatures
+      }
     },
     actions: {
-        updateMarkers (context, markerFeatures) {
-            context.commit('updateMarkers', markerFeatures)
-        }
+      updateOriginMarkerFeatures (context, markerFeatures) {
+        context.commit('updateOriginMarkerFeatures', markerFeatures)
+      },
+      updateDestMarkerFeatures (context, markerFeatures) {
+        context.commit('updateDestMarkerFeatures', markerFeatures)
+      },
+      updateMarkerFeaturesBasedOnVehicle (context, markerFeatures) {
+        context.commit('updateMarkerFeaturesBasedOnVehicle', markerFeatures)
+      }
     },
     getters: {
-        markerFeatures: state => state.markerFeatures
+      originMarkerFeatures: state => state.originMarkerFeatures,
+      destinationMarkerFeatures: state => state.destinationMarkerFeatures,
+      markerFeaturesBasedOnVehicleType: state => state.markerFeaturesBasedOnVehicleType,
+      loading: state => state.loading
     }
 })
