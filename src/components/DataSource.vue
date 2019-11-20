@@ -1,7 +1,7 @@
 <template>
     <v-container>
         <v-layout row wrap>
-            <v-dialog v-model="uploadDataSource" max-width="700px">
+            <v-dialog v-model="uploadDataSource" persistent max-width="700px">
                     <v-card>
                         <v-card-title class="headline">Upload the CSV file to look at the Visualizations</v-card-title>
                         <v-card-actions>
@@ -38,32 +38,39 @@ export default {
             let that = this
             that.uploadDataSource = false
             that.updateApplicationLoadingState()
+            let originMarkerFeatures = []
+            let destinationMarkerFeatures = []
+            let markerFeaturesBasedOnVehicle = {}
+            const vehicleModelIdKey = 'vehicle_model_id'
+            const markerFeaturesBasedOnVehicleSourceKey = 'source'
+            const markerFeaturesBasedOnVehicleDestKey = 'dest'
 
             Papa.parse(file, {
                 header: true,
                 dynamicTyping: true,
-                complete: function(results) {
-                    let rowData = results.data
-                    let originMarkerFeatures = []
-                    let destinationMarkerFeatures = []
-                    let markerFeaturesBasedOnVehicle = {}
-                    const vehicleModelIdKey = 'vehicle_model_id'
-                    const markerFeaturesBasedOnVehicleSourceKey = 'source'
-                    const markerFeaturesBasedOnVehicleDestKey = 'dest'
-                    rowData.forEach(row => {
-                        let originMarkerFeature = new OriginMarkerFeature(row)
-                        let destinationMarkerFeature = new DestinationMarkerFeature(row)
+                worker: true,
+                step: function(row) {
+                    let rowData = row.data
+                    if((rowData['from_area_id'] && rowData['to_area_id'] && rowData['from_lat'] && rowData['from_long'] && rowData['to_lat'] && rowData['to_long']) && (rowData['from_area_id'] !== 'NULL' && rowData['to_area_id'] !== 'NULL' && rowData['from_lat'] !== 'NULL' && rowData['from_long'] !== 'NULL' && rowData['to_lat'] !== 'NULL' && rowData['to_long'] !== 'NULL')) {
+                        let originMarkerFeature = new OriginMarkerFeature(rowData)
+                        let destinationMarkerFeature = new DestinationMarkerFeature(rowData)
+                        let vehicleModelId = rowData[vehicleModelIdKey]
+                        if (!vehicleModelId) {
+                            vehicleModelId = "unknown"
+                        }
                         originMarkerFeatures.push(originMarkerFeature)
                         destinationMarkerFeatures.push(destinationMarkerFeature)
-                        console.log(row['vehicle_model_id'])
-                        if(!markerFeaturesBasedOnVehicle[row.vehicleModelIdKey]) {
-                            markerFeaturesBasedOnVehicle[row.vehicleModelIdKey] = {}
-                            markerFeaturesBasedOnVehicle[row.vehicleModelIdKey][markerFeaturesBasedOnVehicleSourceKey] = []
-                            markerFeaturesBasedOnVehicle[row.vehicleModelIdKey][markerFeaturesBasedOnVehicleDestKey] = []
+                        if(!markerFeaturesBasedOnVehicle[vehicleModelId]) {
+                            let tempRowAttributes = {}
+                            tempRowAttributes[markerFeaturesBasedOnVehicleSourceKey] = []
+                            tempRowAttributes[markerFeaturesBasedOnVehicleDestKey] = []
+                            markerFeaturesBasedOnVehicle[vehicleModelId] = tempRowAttributes
                         }
-                        markerFeaturesBasedOnVehicle[row.vehicleModelIdKey][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
-                        markerFeaturesBasedOnVehicle[row.vehicleModelIdKey][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)                        
-                    })
+                        markerFeaturesBasedOnVehicle[vehicleModelId][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
+                        markerFeaturesBasedOnVehicle[vehicleModelId][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+                    }                    
+                },
+                complete: function() {
                     Promise.all([
                         that.updateOriginMarkerFeatures(originMarkerFeatures),
                         that.updateDestMarkerFeatures(destinationMarkerFeatures),

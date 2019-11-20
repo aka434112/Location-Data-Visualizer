@@ -1,10 +1,10 @@
 <template>
   <v-app id="app">
     <div>
-        <v-dialog v-model="loading" persistent width="300">
+        <v-dialog v-model="loading" persistent width="400">
             <v-card color="primary" dark>
               <v-card-text>
-                Please stand by
+                Processing the Data Source
               <v-progress-linear
               indeterminate
               color="white"

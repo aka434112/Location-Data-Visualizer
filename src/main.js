@@ -9,21 +9,7 @@ import store from './store'
 import VueGoogleCharts from 'vue-google-charts'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet/dist/leaflet.js'
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow
-})
-
-L.Marker.prototype.options.icon = DefaultIcon
-// webpack parses for require.context() in the code while building
-// function importAll (r) {
-//   r.keys().forEach(r)
-// }
-
-// importAll(require.context('./../node_modules/leaflet/dist/images', true, /\.png$/))
+import 'leaflet.heat/dist/leaflet-heat.js'
 
 Vue.use(VueGoogleCharts)
 Vue.use(Vuetify)

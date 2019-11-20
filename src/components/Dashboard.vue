@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-layout row wrap>
-        <v-flex xs12 sm8>
+        <v-flex xs12>
           <input-csv-file></input-csv-file>
           <v-card class="map" id="map">
           </v-card>
@@ -12,6 +12,7 @@
 
 <script>
 import mapConstants from '../constants/mapconstants'
+import FeatureCollection from '../models/featureCollection'
 import inputCsvFile from './DataSource'
 import {mapGetters} from 'vuex'
 
@@ -20,7 +21,9 @@ export default {
   data () {
     return {
       map: null,
-      tileLayer: null
+      tileLayer: null,
+      destinationMarkerFeaturesGeoJSON: null,
+      originMarkerFeaturesGeoJSON: null
     }
   },
   components: {
@@ -28,7 +31,7 @@ export default {
   },
   methods: {
     initMap() {
-      this.map = L.map('map').setView([38.63, -90.23], 12);
+      this.map = L.map('map', {preferCanvas: true}).setView([13, 77.6], 12);
       this.tileLayer = L.tileLayer(
         mapConstants.tile,
         {
@@ -40,21 +43,41 @@ export default {
       this.tileLayer.addTo(this.map);
     },
     initLayers () {
-      const originMarkerFeatures = this.originMarkerFeatures
-      originMarkerFeatures.forEach((feature) => {
-          feature.leafletObject = L.marker(feature.coords).bindPopup(feature.name)
-          feature.leafletObject.addTo(this.map)
+      let that = this
+      const geojsonMarkerOptionsOrigin = mapConstants.geoJSONMarkerOptionOrigin
+      const geojsonMarkerOptionsDestination = mapConstants.geoJSONMarkerOptionDestination
+      const originMarkerFeatures = that.originMarkerFeatures
+      const destinationMarkerFeatures = that.destinationMarkerFeatures
+      const originMarkerFeaturesCollection = new FeatureCollection(originMarkerFeatures)
+      const destinationMarkerFeaturesCollection = new FeatureCollection(destinationMarkerFeatures)
+      that.destinationMarkerFeaturesGeoJSON = new L.GeoJSON(destinationMarkerFeaturesCollection, {
+          pointToLayer: function (feature, latlng) {
+              return L.circleMarker(latlng, geojsonMarkerOptionsDestination)
+          }
       })
+      that.originMarkerFeaturesGeoJSON = new L.GeoJSON(originMarkerFeaturesCollection, {
+          pointToLayer: function (feature, latlng) {
+              return L.circleMarker(latlng, geojsonMarkerOptionsOrigin)
+          }
+      })
+      let markerFeaturesLayerGroup = new L.LayerGroup()
+      markerFeaturesLayerGroup.addTo(that.map)
+      markerFeaturesLayerGroup.addLayer(that.destinationMarkerFeaturesGeoJSON)
+      markerFeaturesLayerGroup.addLayer(that.originMarkerFeaturesGeoJSON)
     }
   },
   computed: {
     ...mapGetters([
-      'originMarkerFeatures'
+      'originMarkerFeatures',
+      'destinationMarkerFeatures',
+      'loading'
     ])
   },
   watch: {
-    originMarkerFeatures: function () {
-      this.initLayers()
+    loading: function (applicationLoadingState) {
+      if(!applicationLoadingState) {
+        this.initLayers()
+      }
     }
   },
   mounted() {
@@ -67,6 +90,6 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="stylus" scoped>
 .map 
-  height 500px
+  height 80vh
   z-index 0
 </style>
