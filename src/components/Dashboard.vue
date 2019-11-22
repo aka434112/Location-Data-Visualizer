@@ -33,9 +33,10 @@
 import mapConstants from '../constants/mapconstants'
 import FeatureCollection from '../models/featureCollection'
 import generateChartCompatibleDataWorker from 'worker-loader!./../scripts/generateChartCompatibleDataWorker.js'
+import heatMapDataGenerator from 'worker-loader!./../scripts/worker.js'
 import { GChart } from 'vue-google-charts'
 import inputCsvFile from './DataSource'
-import {mapGetters} from 'vuex'
+import {mapGetters, mapMutations} from 'vuex'
 
 export default {
   name: 'Dashboard',
@@ -51,6 +52,8 @@ export default {
       markerFeaturesLayerGroup: null,
       workerThread: null,
       chartFilterInPlay: false,
+      filteredHeatMapCompatibleDataSrc: null,
+      filteredHeatMapCompatibleDataDest: null,
       chartOptions: {
           title: 'THE NUMBER OF BOOKINGS AGAINST A VEHICLE MODEL',
           titleTextStyle : {
@@ -77,22 +80,30 @@ export default {
       filterEvents: {
         'select': () => {
           let that = this
+          const heatMapGeneratorThread = new heatMapDataGenerator
           const table = that.$refs.gChart.chartObject
           const selection = table.getSelection()
           const vehicleTypeDataRowKey = 'row'
           if (selection.length) {
+            that.resetCheckState()
+            that.drawHeatMap = false
             const vehicleTypeDataRow = selection[0][vehicleTypeDataRowKey] + 1
             const vehicleModel = that.vehicleTypeData[vehicleTypeDataRow][0]
             const vehicleModelGeoJSON = that.markerFeaturesBasedOnVehicleType[vehicleModel]
-            that.removeOriginLayer()
-            that.removeDestLayer()
-            that.createGeoJSON(new FeatureCollection(vehicleModelGeoJSON['source']), new FeatureCollection(vehicleModelGeoJSON['dest']))
-            that.chartFilterInPlay = true
-            if(that.drawSource) {
-              that.addLayerToMap(that.originMarkerFeaturesGeoJSON)       
-            } if (that.drawDestination) {
-              that.addLayerToMap(that.destinationMarkerFeaturesGeoJSON)
+            const vehicleModelGeoJsonSrc = new FeatureCollection(vehicleModelGeoJSON['source'])
+            const vehicleModelGeoJsonDest = new FeatureCollection(vehicleModelGeoJSON['dest'])           
+            that.createGeoJSON(vehicleModelGeoJsonSrc, vehicleModelGeoJsonDest)
+            heatMapGeneratorThread.onmessage = function (messageEvent) {
+                const heatMapCompatibleDataWrapper = messageEvent.data
+                if(heatMapCompatibleDataWrapper.type === 'origin') {
+                    that.filteredHeatMapCompatibleDataSrc = heatMapCompatibleDataWrapper.heatMapCompatibleData
+                } else {
+                    that.filteredHeatMapCompatibleDataDest = heatMapCompatibleDataWrapper.heatMapCompatibleData
+                }
+                that.chartFilterInPlay = true
             }
+            heatMapGeneratorThread.postMessage({geoJSON: vehicleModelGeoJsonSrc, intensity: 1, type: 'origin'})
+            heatMapGeneratorThread.postMessage({geoJSON: vehicleModelGeoJsonDest, intensity: 1, type: 'destination'})
           }
         }
       }
@@ -103,10 +114,12 @@ export default {
     GChart
   },
   methods: {
+    ...mapMutations(['updateApplicationLoadingState']),
     resetFilter() {
       let that = this
       that.drawSource = false
       that.drawDestination = false
+      that.drawHeatMap = false
       that.configureDefaultGeoJSON()
       that.chartFilterInPlay = false
     },
@@ -142,6 +155,8 @@ export default {
       const originMarkerFeaturesCollection = new FeatureCollection(originMarkerFeatures)
       const destinationMarkerFeaturesCollection = new FeatureCollection(destinationMarkerFeatures)
       that.createGeoJSON(originMarkerFeaturesCollection, destinationMarkerFeaturesCollection)
+      that.filteredHeatMapCompatibleDataSrc = that.heatMapCompatibleDataOrigin
+      that.filteredHeatMapCompatibleDataDest = that.heatMapCompatibleDataDest
     },
     createGeoJSON (originMarkerFeaturesCollection, destinationMarkerFeaturesCollection) {
       let that = this
@@ -159,9 +174,10 @@ export default {
       })
     },
     configureHeatMapLayer (heatMapCompatibleData) {
+      let that = this
       return L.heatLayer(heatMapCompatibleData, {
-        radius: 12
-      }).addTo(this.map)
+        radius: 15
+      }).addTo(that.map)
     },
     removeOriginLayer () {
       let that = this
@@ -183,6 +199,27 @@ export default {
     },
     addLayerToMap (GeoJSONMarkerFeature) {
       this.markerFeaturesLayerGroup.addLayer(GeoJSONMarkerFeature)
+    },
+    drawAppropriateSourceLayer () {
+      let that = this
+      if (that.drawHeatMap) {
+          that.originHeatMap = that.configureHeatMapLayer(that.filteredHeatMapCompatibleDataSrc)
+      } else {
+        that.addLayerToMap(that.originMarkerFeaturesGeoJSON)
+      }
+    },
+    drawAppropriateDestLayer (heatMapCompatibleData) {
+      let that = this
+      if (that.drawHeatMap) {
+          that.destHeatMap = that.configureHeatMapLayer(that.filteredHeatMapCompatibleDataDest)
+      } else {
+        that.addLayerToMap(that.destinationMarkerFeaturesGeoJSON)
+      }
+    },
+    resetCheckState() {
+      let that = this
+      that.drawSource = false
+      that.drawDestination = false
     }
   },
   computed: {
@@ -204,11 +241,7 @@ export default {
     drawSource: function (drawSourceCoords) {
       let that = this
       if (drawSourceCoords) {
-        if (that.drawHeatMap) {
-          that.originHeatMap = that.configureHeatMapLayer(that.heatMapCompatibleDataOrigin)
-        } else {
-          that.addLayerToMap(that.originMarkerFeaturesGeoJSON)
-        }
+        that.drawAppropriateSourceLayer()
       } else {
         that.removeOriginLayer()
       }
@@ -216,19 +249,25 @@ export default {
     drawDestination: function (drawDestCoords) {
       let that = this
       if (drawDestCoords) {
-        if (that.drawHeatMap) {
-          that.destHeatMap = that.configureHeatMapLayer(that.heatMapCompatibleDataDest)
-        } else {
-          that.addLayerToMap(that.destinationMarkerFeaturesGeoJSON)
-        }
+        that.drawAppropriateDestLayer()
       } else {
         that.removeDestLayer()
       }
     },
-    drawHeatMap: function () {
+    drawHeatMap: function (resetCheckState) {
+      this.resetCheckState()
+    },
+    heatMapCompatibleDataOrigin: function () {
       let that = this
-      that.drawSource = false
-      that.drawDestination = false
+      if(that.heatMapCompatibleDataDest.length) {
+        that.updateApplicationLoadingState()
+      }
+    },
+    heatMapCompatibleDataDest: function () {
+      let that = this
+      if(that.heatMapCompatibleDataOrigin.length) {
+        that.updateApplicationLoadingState()
+      }
     }
   },
   mounted() {
@@ -244,7 +283,7 @@ export default {
   height 80vh
   z-index 0
 #chart
-  height 48vh
+  height 45vh
 .chart
   margin 1%
 </style>

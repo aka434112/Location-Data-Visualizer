@@ -1,7 +1,7 @@
 <template>
     <v-container>
         <v-layout row wrap>
-            <v-dialog v-model="uploadDataSource" max-width="700px">
+            <v-dialog v-model="uploadDataSource" persistent max-width="700px">
                     <v-card>
                         <v-card-title class="headline">Input the CSV file to look at a story behind your data</v-card-title>
                         <v-card-actions>
@@ -79,7 +79,6 @@ export default {
                         that.updateDestMarkerFeatures(destinationMarkerFeatures),
                         that.updateMarkerFeaturesBasedOnVehicle(markerFeaturesBasedOnVehicle)
                     ]).finally(() => {
-                        that.updateApplicationLoadingState()
                         that.workerThread.postMessage({geoJSON: new FeatureCollection(originMarkerFeatures), intensity: 0.5, type: 'origin'})
                         that.workerThread.postMessage({geoJSON: new FeatureCollection(destinationMarkerFeatures), intensity: 1, type: 'destination'})
                     })
