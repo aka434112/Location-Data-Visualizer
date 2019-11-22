@@ -107,6 +107,7 @@ export default {
       let that = this
       that.drawSource = false
       that.drawDestination = false
+      that.configureDefaultGeoJSON()
       that.chartFilterInPlay = false
     },
     initMap() {
