@@ -75,4 +75,6 @@ export default {
   font-family 'Montserrat', sans-serif !important
   -webkit-font-smoothing antialiased
   -moz-osx-font-smoothing grayscale
+.leaflet-heatmap-layer
+  opacity 0.7 !important
 </style>

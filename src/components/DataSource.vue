@@ -1,9 +1,9 @@
 <template>
     <v-container>
         <v-layout row wrap>
-            <v-dialog v-model="uploadDataSource" persistent max-width="700px">
+            <v-dialog v-model="uploadDataSource" max-width="700px">
                     <v-card>
-                        <v-card-title class="headline">Upload the CSV file to look at the Visualizations</v-card-title>
+                        <v-card-title class="headline">Input the CSV file to look at a story behind your data</v-card-title>
                         <v-card-actions>
                             <v-file-input id="fileUpload" @change="handleFileSelect($event)" accept=".csv"></v-file-input>
                         </v-card-actions>
@@ -16,12 +16,15 @@
 <script>
 import Papa from 'papaparse'
 import {OriginMarkerFeature, DestinationMarkerFeature} from '../models/MarkerFeature'
+import FeatureCollection from '../models/featureCollection'
+import heatMapDataGenerator from 'worker-loader!./../scripts/worker.js'
 import {mapMutations, mapActions} from 'vuex'
 
 export default {
     data () {
         return {
-            uploadDataSource: true
+            uploadDataSource: true,
+            workerThread: null
         }
     },
     props: {
@@ -32,7 +35,7 @@ export default {
     },
     methods: {
         ...mapMutations(['updateApplicationLoadingState']),
-        ...mapActions(['updateOriginMarkerFeatures', 'updateDestMarkerFeatures', 'updateMarkerFeaturesBasedOnVehicle']),
+        ...mapActions(['updateOriginMarkerFeatures', 'updateDestMarkerFeatures', 'updateMarkerFeaturesBasedOnVehicle', 'updateHeatMapCompatibleDataOrigin', 'updateHeatMapCompatibleDataDest']),
         handleFileSelect () {
             let file = window.event.target.files[0]
             let that = this
@@ -75,9 +78,25 @@ export default {
                         that.updateOriginMarkerFeatures(originMarkerFeatures),
                         that.updateDestMarkerFeatures(destinationMarkerFeatures),
                         that.updateMarkerFeaturesBasedOnVehicle(markerFeaturesBasedOnVehicle)
-                    ]).finally(() => that.updateApplicationLoadingState())
+                    ]).finally(() => {
+                        that.updateApplicationLoadingState()
+                        that.workerThread.postMessage({geoJSON: new FeatureCollection(originMarkerFeatures), intensity: 0.5, type: 'origin'})
+                        that.workerThread.postMessage({geoJSON: new FeatureCollection(destinationMarkerFeatures), intensity: 1, type: 'destination'})
+                    })
                 }
             })
+        }
+    },
+    created () {
+        let that = this
+        that.workerThread = new heatMapDataGenerator
+        that.workerThread.onmessage = function (messageEvent) {
+            const heatMapCompatibleDataWrapper = messageEvent.data
+            if(heatMapCompatibleDataWrapper.type === 'origin') {
+                that.updateHeatMapCompatibleDataOrigin(heatMapCompatibleDataWrapper.heatMapCompatibleData)
+            } else {
+                that.updateHeatMapCompatibleDataDest(heatMapCompatibleDataWrapper.heatMapCompatibleData)
+            }
         }
     }
 }

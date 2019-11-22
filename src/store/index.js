@@ -12,7 +12,9 @@ export default new Vuex.Store({
         loading: false,
         markerFeaturesBasedOnVehicleType: {},
         destinationMarkerFeatures: [],
-        originMarkerFeatures: []
+        originMarkerFeatures: [],
+        heatMapCompatibleDataOrigin: [],
+        heatMapCompatibleDataDest: []
     },
     mutations: {
       updateOriginMarkerFeatures (state, markerFeatures) {
@@ -26,6 +28,15 @@ export default new Vuex.Store({
       },
       updateMarkerFeaturesBasedOnVehicle (state, markerFeatures) {
         state.markerFeaturesBasedOnVehicleType = markerFeatures
+      },
+      heatMapCompatibleData (state, heatMapCompatibleData) {
+        state.heatMapCompatibleDataOrigin = heatMapCompatibleData
+      },
+      updateHeatMapCompatibleDataOrigin (state, heatMapCompatibleData) {
+        state.heatMapCompatibleDataOrigin = heatMapCompatibleData
+      },
+      updateHeatMapCompatibleDataDest (state, heatMapCompatibleData) {
+        state.heatMapCompatibleDataDest = heatMapCompatibleData
       }
     },
     actions: {
@@ -37,12 +48,20 @@ export default new Vuex.Store({
       },
       updateMarkerFeaturesBasedOnVehicle (context, markerFeatures) {
         context.commit('updateMarkerFeaturesBasedOnVehicle', markerFeatures)
+      },
+      updateHeatMapCompatibleDataOrigin (context, heatMapCompatibleData) {
+        context.commit('updateHeatMapCompatibleDataOrigin', heatMapCompatibleData)
+      },
+      updateHeatMapCompatibleDataDest (context, heatMapCompatibleData) {
+        context.commit('updateHeatMapCompatibleDataDest', heatMapCompatibleData)
       }
     },
     getters: {
       originMarkerFeatures: state => state.originMarkerFeatures,
       destinationMarkerFeatures: state => state.destinationMarkerFeatures,
       markerFeaturesBasedOnVehicleType: state => state.markerFeaturesBasedOnVehicleType,
-      loading: state => state.loading
+      loading: state => state.loading,
+      heatMapCompatibleDataOrigin: state => state.heatMapCompatibleDataOrigin,
+      heatMapCompatibleDataDest: state => state.heatMapCompatibleDataDest
     }
 })
