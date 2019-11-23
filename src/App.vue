@@ -1,28 +1,26 @@
 <template>
-  <v-app id="app">
-    <div>
-        <v-dialog v-model="loading" persistent width="400">
-            <v-card color="primary" dark>
-              <v-card-text>
-                Processing the Data Source
-              <v-progress-linear
-              indeterminate
-              color="white"
-              class="mb-0"
-              ></v-progress-linear>
-              </v-card-text>
-            </v-card>
-        </v-dialog>
+    <div id="app">
+	  <v-app>
       <v-app-bar color="blue" dark>
           <v-app-bar-nav-icon @click="showNavMenu=true"></v-app-bar-nav-icon>
           <v-toolbar-title>Ride Analysis Dashboard</v-toolbar-title>
       </v-app-bar>
+		<v-dialog v-model="loading" persistent width="500">
+			<v-card color="primary" dark>
+			  <v-card-text>
+				Processing Your Input... This Might Take Some Time
+				  <v-progress-linear
+				  indeterminate
+				  color="white"
+				  class="mb-0"
+				  ></v-progress-linear>
+			  </v-card-text>
+			</v-card>
+		</v-dialog>
       <v-navigation-drawer
         v-model="showNavMenu"
-        :mini-variant="mini"
-        absolute
-        bottom
         dark
+		absolute
         temporary
       >
 
@@ -44,8 +42,8 @@
         </v-list>
       </v-navigation-drawer>
       <router-view/>
-    </div>
-  </v-app>
+	  </v-app>
+	</div>
 </template>
 
 <script>
@@ -59,7 +57,6 @@ export default {
       items: [
         { title: 'Home', icon: 'dashboard', to: '/' }
       ],
-      mini: false
     }
   },
   computed: {

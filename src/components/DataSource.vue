@@ -16,15 +16,14 @@
 <script>
 import Papa from 'papaparse'
 import {OriginMarkerFeature, DestinationMarkerFeature} from '../models/MarkerFeature'
+import mapConstants from '../constants/mapconstants'
 import FeatureCollection from '../models/featureCollection'
-import heatMapDataGenerator from 'worker-loader!./../scripts/worker.js'
 import {mapMutations, mapActions} from 'vuex'
 
 export default {
     data () {
         return {
-            uploadDataSource: true,
-            workerThread: null
+            uploadDataSource: true
         }
     },
     props: {
@@ -36,6 +35,14 @@ export default {
     methods: {
         ...mapMutations(['updateApplicationLoadingState']),
         ...mapActions(['updateOriginMarkerFeatures', 'updateDestMarkerFeatures', 'updateMarkerFeaturesBasedOnVehicle', 'updateHeatMapCompatibleDataOrigin', 'updateHeatMapCompatibleDataDest']),
+		geoJson2heat (geojson, intensity) {
+			if(geojson) {
+				return geojson.features.map(function (feature) {
+					return [parseFloat(feature.geometry.coordinates[1]),
+					parseFloat(feature.geometry.coordinates[0]), intensity]
+				})
+			}
+		},
         handleFileSelect () {
             let file = window.event.target.files[0]
             let that = this
@@ -44,9 +51,18 @@ export default {
             let originMarkerFeatures = []
             let destinationMarkerFeatures = []
             let markerFeaturesBasedOnVehicle = {}
-            const vehicleModelIdKey = 'vehicle_model_id'
-            const markerFeaturesBasedOnVehicleSourceKey = 'source'
-            const markerFeaturesBasedOnVehicleDestKey = 'dest'
+            let tempRowAttributes = {}
+            const vehicleModelIdKey = mapConstants.vehicleModelIdKey
+            const markerFeaturesBasedOnVehicleSourceKey = mapConstants.markerFeaturesBasedOnVehicleSourceKey
+            const markerFeaturesBasedOnVehicleDestKey = mapConstants.markerFeaturesBasedOnVehicleDestKey
+            const mobileBookingKey = mapConstants.mobileBookingKey
+            const desktopBookingKey = mapConstants.desktopBookingKey
+            const otherMediumBookingKey = mapConstants.otherMediumBookingKey
+			const carCancellationKey = mapConstants.carCancellationKey
+            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey] = {}
+            markerFeaturesBasedOnVehicle[mapConstants.demandObjKey] = {}
+			markerFeaturesBasedOnVehicle[mapConstants.carCancellationKey] = {}
+            let tempCount = 0
 
             Papa.parse(file, {
                 header: true,
@@ -58,19 +74,65 @@ export default {
                         let originMarkerFeature = new OriginMarkerFeature(rowData)
                         let destinationMarkerFeature = new DestinationMarkerFeature(rowData)
                         let vehicleModelId = rowData[vehicleModelIdKey]
+                        let isMobileBooking = rowData[mobileBookingKey]
+                        let isDesktopBooking = rowData[desktopBookingKey]
+						const cancelledTrip = rowData[carCancellationKey]
+                        const chartMobileBookingKey = mobileBookingKey.split('_').join(' ')
+                        const chartDesktopBookingKey = desktopBookingKey.split('_').join(' ')
+						
                         if (!vehicleModelId) {
                             vehicleModelId = "unknown"
+                        } else {
+                            vehicleModelId = mapConstants.vehicleModelConstant + vehicleModelId
                         }
                         originMarkerFeatures.push(originMarkerFeature)
                         destinationMarkerFeatures.push(destinationMarkerFeature)
-                        if(!markerFeaturesBasedOnVehicle[vehicleModelId]) {
-                            let tempRowAttributes = {}
+                        if(!markerFeaturesBasedOnVehicle[mapConstants.demandObjKey][vehicleModelId]) {
+                            tempRowAttributes = {}
                             tempRowAttributes[markerFeaturesBasedOnVehicleSourceKey] = []
                             tempRowAttributes[markerFeaturesBasedOnVehicleDestKey] = []
-                            markerFeaturesBasedOnVehicle[vehicleModelId] = tempRowAttributes
+                            markerFeaturesBasedOnVehicle[mapConstants.demandObjKey][vehicleModelId] = tempRowAttributes
                         }
-                        markerFeaturesBasedOnVehicle[vehicleModelId][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
-                        markerFeaturesBasedOnVehicle[vehicleModelId][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+                        markerFeaturesBasedOnVehicle[mapConstants.demandObjKey][vehicleModelId][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
+                        markerFeaturesBasedOnVehicle[mapConstants.demandObjKey][vehicleModelId][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+						if (cancelledTrip) {
+							if(!markerFeaturesBasedOnVehicle[mapConstants.carCancellationKey][markerFeaturesBasedOnVehicleSourceKey]) {
+                                tempRowAttributes = {}
+                                tempRowAttributes[markerFeaturesBasedOnVehicleSourceKey] = []
+                                tempRowAttributes[markerFeaturesBasedOnVehicleDestKey] = [] 
+								markerFeaturesBasedOnVehicle[mapConstants.carCancellationKey] = tempRowAttributes
+							}
+							markerFeaturesBasedOnVehicle[mapConstants.carCancellationKey][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
+							markerFeaturesBasedOnVehicle[mapConstants.carCancellationKey][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+						}
+                        if (isMobileBooking) {
+                            if(!markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartMobileBookingKey]) {
+                                tempRowAttributes = {}
+                                tempRowAttributes[markerFeaturesBasedOnVehicleSourceKey] = []
+                                tempRowAttributes[markerFeaturesBasedOnVehicleDestKey] = [] 
+                                markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartMobileBookingKey] = tempRowAttributes                           
+                            } 
+                            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartMobileBookingKey][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
+                            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartMobileBookingKey][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+                        } else if (isDesktopBooking) {
+                            if(!markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartDesktopBookingKey]) {
+                                tempRowAttributes = {}
+                                tempRowAttributes[markerFeaturesBasedOnVehicleSourceKey] = []
+                                tempRowAttributes[markerFeaturesBasedOnVehicleDestKey] = [] 
+                                markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartDesktopBookingKey] = tempRowAttributes                           
+                            } 
+                            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartDesktopBookingKey][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
+                            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][chartDesktopBookingKey][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+                        } else {
+                            if(!markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][otherMediumBookingKey]) {
+                                tempRowAttributes = {}
+                                tempRowAttributes[markerFeaturesBasedOnVehicleSourceKey] = []
+                                tempRowAttributes[markerFeaturesBasedOnVehicleDestKey] = [] 
+                                markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][otherMediumBookingKey] = tempRowAttributes                           
+                            } 
+                            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][otherMediumBookingKey][markerFeaturesBasedOnVehicleSourceKey].push(originMarkerFeature)
+                            markerFeaturesBasedOnVehicle[mapConstants.bookingObjKey][otherMediumBookingKey][markerFeaturesBasedOnVehicleDestKey].push(destinationMarkerFeature)
+                        }
                     }                    
                 },
                 complete: function() {
@@ -79,29 +141,21 @@ export default {
                         that.updateDestMarkerFeatures(destinationMarkerFeatures),
                         that.updateMarkerFeaturesBasedOnVehicle(markerFeaturesBasedOnVehicle)
                     ]).finally(() => {
-                        that.workerThread.postMessage({geoJSON: new FeatureCollection(originMarkerFeatures), intensity: 0.5, type: 'origin'})
-                        that.workerThread.postMessage({geoJSON: new FeatureCollection(destinationMarkerFeatures), intensity: 1, type: 'destination'})
+						that.updateHeatMapCompatibleDataOrigin(that.geoJson2heat(new FeatureCollection(originMarkerFeatures), 1))
+						that.updateHeatMapCompatibleDataDest(that.geoJson2heat(new FeatureCollection(destinationMarkerFeatures), 1))
+						that.updateApplicationLoadingState()
                     })
                 }
             })
         }
     },
     created () {
-        let that = this
-        that.workerThread = new heatMapDataGenerator
-        that.workerThread.onmessage = function (messageEvent) {
-            const heatMapCompatibleDataWrapper = messageEvent.data
-            if(heatMapCompatibleDataWrapper.type === 'origin') {
-                that.updateHeatMapCompatibleDataOrigin(heatMapCompatibleDataWrapper.heatMapCompatibleData)
-            } else {
-                that.updateHeatMapCompatibleDataDest(heatMapCompatibleDataWrapper.heatMapCompatibleData)
-            }
-        }
+
     }
 }
 </script>
 
 <style lang="stylus" scoped>
 .headline
-    font-family 'Montserrat', sans-serif !important
+  font-family 'Montserrat', sans-serif !important
 </style>

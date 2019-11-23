@@ -14,7 +14,8 @@ export default new Vuex.Store({
         destinationMarkerFeatures: [],
         originMarkerFeatures: [],
         heatMapCompatibleDataOrigin: [],
-        heatMapCompatibleDataDest: []
+        heatMapCompatibleDataDest: [],
+		csvProcessed: false
     },
     mutations: {
       updateOriginMarkerFeatures (state, markerFeatures) {
@@ -37,6 +38,7 @@ export default new Vuex.Store({
       },
       updateHeatMapCompatibleDataDest (state, heatMapCompatibleData) {
         state.heatMapCompatibleDataDest = heatMapCompatibleData
+		state.csvProcessed = true
       }
     },
     actions: {
@@ -62,6 +64,7 @@ export default new Vuex.Store({
       markerFeaturesBasedOnVehicleType: state => state.markerFeaturesBasedOnVehicleType,
       loading: state => state.loading,
       heatMapCompatibleDataOrigin: state => state.heatMapCompatibleDataOrigin,
-      heatMapCompatibleDataDest: state => state.heatMapCompatibleDataDest
+      heatMapCompatibleDataDest: state => state.heatMapCompatibleDataDest,
+	  fileProcessed: state => state.csvProcessed
     }
 })
