@@ -17,6 +17,7 @@
 import Papa from 'papaparse'
 import {OriginMarkerFeature, DestinationMarkerFeature} from '../models/MarkerFeature'
 import mapConstants from '../constants/mapconstants'
+import utilityMixin from '../mixins/utility'
 import FeatureCollection from '../models/featureCollection'
 import {mapMutations, mapActions} from 'vuex'
 
@@ -32,17 +33,10 @@ export default {
             type: Boolean
         }
     },
+	mixins: [utilityMixin],
     methods: {
         ...mapMutations(['updateApplicationLoadingState']),
         ...mapActions(['updateOriginMarkerFeatures', 'updateDestMarkerFeatures', 'updateMarkerFeaturesBasedOnVehicle', 'updateHeatMapCompatibleDataOrigin', 'updateHeatMapCompatibleDataDest']),
-		geoJson2heat (geojson, intensity) {
-			if(geojson) {
-				return geojson.features.map(function (feature) {
-					return [parseFloat(feature.geometry.coordinates[1]),
-					parseFloat(feature.geometry.coordinates[0]), intensity]
-				})
-			}
-		},
         handleFileSelect () {
             let file = window.event.target.files[0]
             let that = this

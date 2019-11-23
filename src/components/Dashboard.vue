@@ -56,6 +56,7 @@
 <script>
 import mapConstants from '../constants/mapconstants'
 import FeatureCollection from '../models/featureCollection'
+import utilityMixin from '../mixins/utility'
 import { GChart } from 'vue-google-charts'
 import inputCsvFile from './DataSource'
 import {mapGetters, mapMutations} from 'vuex'
@@ -156,6 +157,7 @@ export default {
     inputCsvFile,
     GChart
   },
+  mixins: [utilityMixin],
   methods: {
     ...mapMutations(['updateApplicationLoadingState']),
 	applyCancellationFilter () {
@@ -208,14 +210,6 @@ export default {
       that.markerFeaturesLayerGroup = new L.LayerGroup()
       that.markerFeaturesLayerGroup.addTo(that.map)
     },
-	geoJson2heat (geojson, intensity) {
-		if(geojson) {
-			return geojson.features.map(function (feature) {
-				return [parseFloat(feature.geometry.coordinates[1]),
-				parseFloat(feature.geometry.coordinates[0]), intensity]
-			})
-		}
-	},
     initLayers () {
         let that = this
         const vehicleModelTypes = that.markerFeaturesBasedOnVehicleType
