@@ -3,7 +3,7 @@
         <v-layout row wrap>
             <v-dialog v-model="uploadDataSource" persistent max-width="700px">
                     <v-card>
-                        <v-card-title class="headline">Input the CSV file to look at a story behind your data</v-card-title>
+                        <v-card-title class="headline" v-once>{{fileUploadDialogMessage}}</v-card-title>
                         <v-card-actions>
                             <v-file-input id="fileUpload" @change="handleFileSelect($event)" accept=".csv"></v-file-input>
                         </v-card-actions>
@@ -24,7 +24,8 @@ import {mapMutations, mapActions} from 'vuex'
 export default {
     data () {
         return {
-            uploadDataSource: true
+            uploadDataSource: true,
+			fileUploadDialogMessage: mapConstants.inputFileMessage,
         }
     },
     props: {
@@ -152,4 +153,9 @@ export default {
 <style lang="stylus" scoped>
 .headline
   font-family 'Montserrat', sans-serif !important
+  font-size 2vh !important  
+  white-space pre-wrap
+  word-break break-word
+  @media screen and (max-width: 768px)
+    font-size 15px !important
 </style>

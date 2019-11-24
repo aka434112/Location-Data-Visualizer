@@ -17,7 +17,7 @@
 						<v-checkbox dense v-model="drawDestination" label="Show Destination Coordinates"></v-checkbox>
 						<v-checkbox v-show="!onlyHeat" dense v-model="drawHeatMap" label="Heat Map"></v-checkbox>
                 </v-flex>
-                <v-flex xs5 align-self-end>
+                <v-flex xs12 sm5 align-self-end>
                   <v-btn text color="primary" v-show="chartFilterInPlay" @click="resetFilter()">RESET CHART FILTER</v-btn>
                 </v-flex>
               </v-layout>

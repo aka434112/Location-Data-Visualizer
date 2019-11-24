@@ -8,6 +8,7 @@ export default {
         weight: 1,
         fillOpacity: 0.6
     },
+	inputFileMessage: 'INPUT THE CSV FILE TO LOOK AT THE STORY BEHIND YOUR DATA',
     geoJSONMarkerOptionDestination: {
         radius: 3,
         fillColor: "#af0",
@@ -30,7 +31,7 @@ export default {
     vehicleModelConstant: 'Model ',
     demandObjKey: 'demand_based_on_vehicle_model',
 	bookingTypeBasedChartOptions: {
-        title: 'THE NUMBER OF BOOKING AGAINST THE PLATFORM',
+        title: 'THE NUMBER OF BOOKINGS AGAINST THE PLATFORM',
         titleTextStyle : {
             fontSize: 14,
             fontName: 'Montserrat',
